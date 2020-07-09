@@ -32,7 +32,7 @@ WORKDIR /tmp
 ADD Gemfile* ./
 
 RUN apk add --virtual build-deps build-base openssl-dev postgresql-dev libc-dev linux-headers libxml2-dev libxslt-dev readline-dev && \
-    bundle install --jobs=2 && \
+    bundle install --no-deployment && \
     apk del build-deps
 
 
@@ -43,36 +43,6 @@ WORKDIR $APP_HOME
 
 
 #ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin/bash:/bin:
-
-
-#RUN /bin/bash -lc "gem install bundler && gem install bundle"
-#RUN /bin/bash -lc "gem install -N rails"
-
-
-#RUN /bin/bash -lc "bundle install --force"
-
-#RUN apt-get update \
-#&& apt-get install -y \
-#apt-utils \
-#build-essential \
-#libpq-dev \
-#libjpeg-dev \
-#libpng-dev \
-#nodejs \
-#yarn
-
-#RUN yarn install --check-files
-
-#Clone the git repo
-
-#RUN mkdir /tmp/app
-#RUN git clone https://github.com/dubeyapoorve/cassandra-example-using-rails.git /tmp/test
-#RUN cp -R /tmp/test/* /tmp/app/
-
-#WORKDIR /tmp/app/
-
-#RUN bundle install --gemfile=/tmp/app/Gemfile
-#RUN apt-get yarn install 
 
 RUN rails new blog --skip-active-record --skip-active-storage -T --skip-bundle
 
