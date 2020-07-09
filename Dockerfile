@@ -12,42 +12,69 @@ RUN yum install openssl make bzip2 autoconf automake sqlite-devel which perl git
 RUN wget https://download.java.net/java/GA/jdk13/5b8a42f3905b406298b72d750b6919f6/33/GPL/openjdk-13_linux-x64_bin.tar.gz
 RUN tar -xvf openjdk-13_linux-x64_bin.tar.gz
 
+
 #Install ruby latest
-FROM ruby:latest
+FROM ruby:2.7.1-alpine3.11
 
-ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin/bash:/bin:
+# Install your app's runtime dependencies in the container
+RUN apk add --update --virtual runtime-deps nodejs libffi-dev readline sqlite
+
+# Install Yarn
+ENV PATH=/root/.yarn/bin:$PATH
+RUN apk add --virtual build-yarn curl && \
+    touch ~/.bashrc && \
+    curl -o- -L https://yarnpkg.com/install.sh | sh && \
+    apk del build-yarn
 
 
-RUN /bin/bash -lc "gem install bundler && gem install bundle"
-RUN /bin/bash -lc "gem install -N rails"
+# Bundle into the temp directory
+WORKDIR /tmp
+ADD Gemfile* ./
+
+RUN apk add --virtual build-deps build-base openssl-dev postgresql-dev libc-dev linux-headers libxml2-dev libxslt-dev readline-dev && \
+    bundle install --jobs=2 && \
+    apk del build-deps
+
+
+# Copy the app's code into the container
+ENV APP_HOME /app
+COPY . $APP_HOME
+WORKDIR $APP_HOME
+
+
+#ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin/bash:/bin:
+
+
+#RUN /bin/bash -lc "gem install bundler && gem install bundle"
+#RUN /bin/bash -lc "gem install -N rails"
 
 
 #RUN /bin/bash -lc "bundle install --force"
 
-RUN apt-get update \
-&& apt-get install -y \
-apt-utils \
-build-essential \
-libpq-dev \
-libjpeg-dev \
-libpng-dev \
-nodejs \
-yarn
+#RUN apt-get update \
+#&& apt-get install -y \
+#apt-utils \
+#build-essential \
+#libpq-dev \
+#libjpeg-dev \
+#libpng-dev \
+#nodejs \
+#yarn
 
 #RUN yarn install --check-files
 
 #Clone the git repo
 
-RUN mkdir /tmp/app
-RUN git clone https://github.com/dubeyapoorve/cassandra-example-using-rails.git /tmp/test
-RUN cp -R /tmp/test/* /tmp/app/
+#RUN mkdir /tmp/app
+#RUN git clone https://github.com/dubeyapoorve/cassandra-example-using-rails.git /tmp/test
+#RUN cp -R /tmp/test/* /tmp/app/
 
-WORKDIR /tmp/app/
+#WORKDIR /tmp/app/
 
-RUN bundle install --gemfile=/tmp/app/Gemfile
-RUN apt-get yarn install 
+#RUN bundle install --gemfile=/tmp/app/Gemfile
+#RUN apt-get yarn install 
 
-RUN /bin/bash -lc /tmp/app/bin/rails new /tmp/app/blog --skip-active-record --skip-active-storage -T --skip-bundle
+RUN rails new blog --skip-active-record --skip-active-storage -T --skip-bundle
 
 
 RUN  /bin/bash -lc "bundle add cequel"
